@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.SurfaceView;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity
@@ -22,6 +23,12 @@ public class MainActivity extends AppCompatActivity
 
         this.livesTV = (TextView)this.findViewById(R.id.tvLives);
         this.timeTV  = (TextView)this.findViewById(R.id.tvTime);
+
+        this.arcanView = (ArcView)this.findViewById(R.id.arcView);
+        ArcView arcView = (ArcView) findViewById(R.id.arcView);
+        arcView.activity = this;
+
+        //this.livesTV.setText(arcanView.getLives());
 
         /**
          *  диалог не создается  (((

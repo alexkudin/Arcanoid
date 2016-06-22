@@ -56,6 +56,21 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
 
                 actionBall();
 
+                if(ArcView.this.lives < 3)
+                {
+                    //Уменьшаешь количество жизней
+
+
+                    ArcView.this.activity.runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            ArcView.this.livesTV.setText("Lives: " + ArcView.this.lives);
+                        }
+                    });
+                }
+
                 for (int i = 3; i < bricks.length; i++)
                 {
                     for (int j = 0;  j < bricks[i].length; j++)
@@ -97,6 +112,7 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
     }
 
     private MySurfaceViewMover MSVM;
+
     boolean isWin = false;
     boolean gameRun;            // status of game : Run or Not
     boolean paused = true;      // if game is paused == true
@@ -122,6 +138,7 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
     public int         bricksCnt;
     public TextView livesTV;
     public Context context;
+    Activity activity;
     //public Activity activity;
 
 
@@ -231,7 +248,16 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         Log.d("Surf_Changed , Height = ",String.valueOf(height / this.SCALE));
         Log.d("Surf_Changed , Width  = ",String.valueOf(width / this.SCALE));
 
+
+        if(this.livesTV == null)
+        {
+            this.livesTV = (TextView)this.activity.findViewById(R.id.tvLives);
+        }
+        //Записываю текущее значение счетчика (по умолчанию = 3) при первом создании SurfaceView
+        this.livesTV.setText("Lives: " + this.lives);
+
     }
+
     @Override
     public void surfaceDestroyed(SurfaceHolder holder)
     {
@@ -313,6 +339,7 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
             if ((ball.getRectBall().bottom) >= this.screenY)
             {
                 this.lives --;
+
 
                 ball.defaultBall(this.racket.getRacketX(),
                         this.racket.getRacketY(),
