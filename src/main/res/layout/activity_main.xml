@@ -22,23 +22,26 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="3"
-            android:text="Lives : "
+            android:layout_weight="1"
+            android:text="Lives :"
             android:textSize="12pt"
-            android:textColor="#8e252a"/>
+            android:textColor="#8e252a"
+            android:gravity="center"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/tvLives"
             android:textSize="12pt"
-            android:layout_weight="1"/>
+            android:layout_weight="3"
+            android:gravity="left"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Time : "
             android:textSize="12pt"
             android:textColor="#1c8dfd"
-            android:layout_weight="3"/>
+            android:layout_weight="1"
+            android:gravity="center"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

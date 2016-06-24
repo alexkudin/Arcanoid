@@ -1,5 +1,6 @@
 package com.ex.ak.arcanoid;
 
+
 import android.graphics.RectF;
 
 /**
@@ -44,25 +45,25 @@ public class Racket
         this.racketX = (screenWidth / 2) - (this.racketLength / 2);
         this.racketY = screenHeight - this.racketHeight;
         this.rectRacket = new RectF((float)this.racketX,                        // X of left top
-                                    (float)this.racketY,                        // Y of left top
-                                    (float)this.racketX + this.racketLength,    // X of right bottom
-                                    (float)this.racketY + this.racketHeight);   // Y of right bottom
+                (float)this.racketY,                        // Y of left top
+                (float)this.racketX + this.racketLength,    // X of right bottom
+                (float)this.racketY + this.racketHeight);   // Y of right bottom
         this.racketSpeed = speed * 15;
     }
 
-    public RectF getRectRacket() {
+    public RectF    getRectRacket()   {
         return rectRacket;
     }
 
-    public void setRacketDirection(int movingDir) {
+    public void     setRacketDirection(int movingDir) {
         this.racketMoving = movingDir;
     }
 
-    public void updateRacket(int screenX , double updateSpeed)
-    {
+    public void     updateRacket(int screenX , double updateSpeed)    {
         switch (this.racketMoving)
         {
             case RACKET_LEFT:
+
                 this.racketX -= this.racketSpeed / updateSpeed;
                 if (this.racketX <= 1)
                 {
@@ -71,6 +72,7 @@ public class Racket
                 break;
 
             case RACKET_RIGHT:
+
                 this.racketX += this.racketSpeed / updateSpeed;
                 if (this.racketX >= (screenX - this.racketLength))
                 {
@@ -86,19 +88,21 @@ public class Racket
         rectRacket.right    = (float)(racketX + racketLength);
     }
 
-    public int getRacketLength() {
+    public int      getRacketLength() {
         return racketLength;
     }
 
-    public int getRacketHeight() {
+    public int      getRacketHeight() {
         return racketHeight;
     }
 
-    public double getRacketX() {
+    public double   getRacketX() {
         return racketX;
     }
 
-    public double getRacketY() {
+    public double   getRacketY() {
         return racketY;
     }
 }
+
+

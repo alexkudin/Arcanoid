@@ -19,28 +19,32 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
-
+import java.io.Serializable;
+import java.util.Calendar;
 
 /**
  * класс отвечающий
  * за прорисовку Арканоида
  */
-public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener
+public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener, Serializable
 {
-
+    /**
+     *  Класс-Поток выполняющий Отрисовку
+     *      игрового поля ArcView
+     */
     class MySurfaceViewMover extends Thread
     {
-        private boolean isRun   = true;
+        public boolean isRun   = true;
         SurfaceHolder   holder  = ArcView.this.getHolder();
         Paint           P       = new Paint();
         Canvas          canvas;
 
         @Override
-        public void run()
+        public synchronized void run()
         {
             P.setAntiAlias(true);
 
-            while (this.isRun)
+            while (this.isRun && !paused)
             {
                 //_____a
                 //получаем canvas
@@ -48,30 +52,151 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
                 if (canvas == null) {     continue;      }
 
                 //______б
-                //отрисовка игрового поля
+                // ---------- отрисовка игрового поля -----------
                 P.setColor(Color.DKGRAY);
                 canvas.drawRect(0, 0, screenX, screenY, P);   // цвет фона виджета
 
-                //обновление биты и шарика
-
+                // --------- обновление биты и шарика ------------
                 actionBall();
 
-                if(ArcView.this.lives < 3)
-                {
-                    //Уменьшаешь количество жизней
 
+                // --------- set lives to Lives TextView ---------
+                if(lives < 4)
+                {
+                    ArcView.this.activity.runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public synchronized void run()
+                        {
+                            ArcView.this.livesTV.setText(String.valueOf(ArcView.this.lives));
+                        }
+                    });
+                }
+
+                // --------- set time to Time TextView -----------
+                ArcView.this.activity.runOnUiThread(new Runnable()
+                {
+                    @Override
+                    public synchronized void run()
+                    {
+                        getCurrentTime();
+                        timeOfGame = (timeCurrent - timeStart) + delta;
+                        ArcView.this.timeTV.setText(String.valueOf(timeOfGame/1000));
+                    }
+                });
+
+                // ------------- Dialog GameOver ----------------
+                if(lives < 0)
+                {
+                    this.stopRun();
 
                     ArcView.this.activity.runOnUiThread(new Runnable()
                     {
                         @Override
                         public void run()
                         {
-                            ArcView.this.livesTV.setText("Lives: " + ArcView.this.lives);
+                            AlertDialog.Builder biulder = new AlertDialog.Builder(context);
+                            biulder.setTitle("Game Over");
+                            biulder.setMessage("If you want start new game Press OK, Press Cancel if you want Exit");
+                            biulder.setPositiveButton("OK", new DialogInterface.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which)
+                                {
+                                    MapCreate();
+                                    lives = 3;
+                                    racket    = new Racket(screenX, screenY, speed);
+                                    ball.defaultBall(   racket.getRacketX(),
+                                            racket.getRacketY(),
+                                            racket.getRacketLength());
+                                    MSVM.isRun = true;
+                                    NewGameRun = true;
+                                    delta = 0;
+                                    surfaceCreated(ArcView.this.getHolder());
+                                    //Log.d("click ok - dialog", "<><><><><>");
+                                }
+                            });
+                            biulder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which)
+                                {
+                                    System.exit(0);
+                                }
+                            });
+                            dialogGameOver = biulder.create();
+                            dialogGameOver.show();
+
+                            try
+                            {
+                                ArcView.this.MSVM.isRun = false;
+                                ArcView.this.MSVM.join();   // обязательно дождаться завершения работы потока, выполняющего отрисовку
+                                //Log.d("!!!!! stop Thread","!!!!!!!");
+                            }
+                            catch (InterruptedException ie){ ie.getMessage();}
                         }
                     });
                 }
 
-                for (int i = 3; i < bricks.length; i++)
+                // ------------- Dialog isWin ----------------
+                chkWin();
+
+                if(isWin)
+                {
+                    this.stopRun();
+
+                    ArcView.this.activity.runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            AlertDialog.Builder biulder = new AlertDialog.Builder(context);
+                            biulder.setTitle("You Win");
+                            biulder.setMessage("If you want start new game Press OK, Press Cancel if you want Exit");
+                            biulder.setPositiveButton("OK", new DialogInterface.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which)
+                                {
+                                    bricksCnt = 0;
+                                    delta = 0;
+                                    lives = 3;
+                                    isWin = false;
+                                    MapCreate();
+                                    racket    = new Racket(screenX, screenY, speed);
+                                    ball.defaultBall(   racket.getRacketX(),
+                                                        racket.getRacketY(),
+                                                        racket.getRacketLength());
+                                    MSVM.isRun = true;
+                                    MSVM.goRun();
+                                    NewGameRun = true;
+
+                                    surfaceCreated(ArcView.this.getHolder());
+                                }
+                            });
+                            biulder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which)
+                                {
+                                    System.exit(0);
+                                }
+                            });
+                            dialogGameOver = biulder.create();
+                            dialogGameOver.show();
+
+                            try
+                            {
+                                ArcView.this.MSVM.isRun = false;
+                                ArcView.this.MSVM.join();   // обязательно дождаться завершения работы потока, выполняющего отрисовку
+                            }
+                            catch (InterruptedException ie){ ie.getMessage();}
+                        }
+                    });
+                }
+
+                // ----------- отрисовка Кирпичей ---------------
+                for (int i = 0; i < bricks.length; i++)
                 {
                     for (int j = 0;  j < bricks[i].length; j++)
                     {
@@ -83,10 +208,11 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
                     }
                 }
 
-
+                // ----------- отрисовка Мяча ---------------
                 P.setColor(Color.GREEN);
                 canvas.drawOval(ball.getRectBall(), P);
 
+                // ----------- отрисовка Ракетки ---------------
                 P.setColor(Color.rgb( 0,255,255));
                 canvas.drawRect(racket.getRectRacket(), P);
 
@@ -99,9 +225,9 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
 
                 try
                 {
-                    this.sleep(30);
+                    sleep(30);
                 }
-                catch (InterruptedException ie){}
+                catch (InterruptedException ie){ ie.getMessage();}
             }
         }
 
@@ -109,38 +235,53 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         {
             this.isRun = false;
         }
+        public void goRun()
+        {
+            this.isRun = true;
+        }
     }
 
-    private MySurfaceViewMover MSVM;
-
+    public MySurfaceViewMover MSVM;                        // экземпляр класса-ПотокаОтрисовки
     boolean isWin = false;
-    boolean gameRun;            // status of game : Run or Not
-    boolean paused = true;      // if game is paused == true
-    private int screenX;        // ширина игрового поля
-    private int screenY;        // высота игрового поля
-    public int SCALE = 30;      // Размер ячейки изначально
-    public int DEFAULT_SCALE = 30;
+    public static boolean NewGameRun = true;                // статус игры : Новая - true или Продолжается - false
+    public boolean paused = false;                          // if game is on pause == true
+    public static int screenX;                             // ширина игрового поля
+    public static int screenY;                             // высота игрового поля
+    public static int SCALE = 30;                           // масштаб после пересчета
+    public static int DEFAULT_SCALE = 30;                   // масштаб изначально
     public static final float MODE_LDPI = 0.75f;
     public static final float MODE_MDPI = 1.0f;
     public static final float MODE_HDPI = 1.5f;
     public static final float MODE_XHDPI = 2.0f;
     public static final float MODE_XHDPI_3 = 3.0f;
     public static final float MODE_DEFAULT = 1.0f;
-    private double     brickWidth;                // высота Кирпича
-    private double     brickHeight;               // ширина Кирпича
-    private double     brickPadding = 4.0;        // padding для Кирпича
+    public static double     brickWidth;                   // высота Кирпича
+    public static double     brickHeight;                  // ширина Кирпича
+    public static double     brickPadding = 4.0;           // padding для Кирпича
     private Bitmap     brick = BitmapFactory.decodeResource(this.getResources(), R.drawable.brick);
-    private Brick [][] bricks  = new Brick [8][10];
-    private Racket     racket;
-    private Ball       ball;
-    private double     speed   = 15;
-    public int         lives   = 3;
-    public int         bricksCnt;
-    public TextView livesTV;
-    public Context context;
-    Activity activity;
-    //public Activity activity;
+    public static Brick [][] bricks  = new Brick [4][10];  // массив Кипичей
+    public static Racket     racket;                       // Ракетка
+    public static Ball       ball;                         // Мяч
+    public static double     speed   = 15;                 // Условная скорость(от нее пересчитываются все остальные скорости)
+    public int               lives   = 3;                  // Количество жизней изначально
+    //public String       myTime = java.text.DateFormat.getDateTimeInstance().format(Calendar.getInstance().get(Calendar.SECOND));
 
+    public static long        timeStart;
+    public static long        timeCurrent;
+    public static long        timeOfGame;
+    public static long        delta = 0;
+    public int                bricksCnt;
+    public TextView livesTV;
+    public TextView timeTV;
+    public Context context;
+    Activity activity;                                      // ссылка на МэйнАктивити
+    public AlertDialog dialogGameOver;                      // диалог конца игры
+
+    public void getCurrentTime()
+    {
+        Calendar c = Calendar.getInstance();
+        timeCurrent = c.getTimeInMillis();
+    }
 
     /**
      * Регистрируюсь у SurfaceHolder-а на получение событий
@@ -168,21 +309,21 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         this.MSVM = new MySurfaceViewMover();
 
         //вычисление размеров игрового поля и размеров игрового блока в зависимости от размеров экрана
-        this.screenX = this.getWidth();
-        this.screenY = this.getHeight();
-        Log.d("<<<<<<<", " xPixels: "  + this.screenX);
-        Log.d(">>>>>>>", " yPixels: "   + this.screenY);
+        screenX = this.getWidth();
+        screenY = this.getHeight();
 
-        //----------------------------------------------------------------------------------
+        //Log.d("<<<<<<<", " xPixels: "  + screenX);
+        //Log.d(">>>>>>>", " yPixels: "   + screenY);
+
         //Получаю характеристики экрана (узнаю какой режим включен)
-        Display display = this.getDisplay();
-        DisplayMetrics metrics = new DisplayMetrics();
+        Display display             = this.getDisplay();
+        DisplayMetrics metrics      = new DisplayMetrics();
         display.getMetrics(metrics);
-        Log.d("<<<<<<<", " heightPixels: "  + metrics.heightPixels);
-        Log.d(">>>>>>>", " widthPixels: "   + metrics.widthPixels);
 
-        Log.d("------", " DPI: " + metrics.densityDpi);
-        Log.d("------", " density: " + metrics.density);
+        //Log.d("<<<<<<<", " heightPixels: "  + metrics.heightPixels);
+        //Log.d(">>>>>>>", " widthPixels: "   + metrics.widthPixels);
+        //Log.d("------", " DPI: " + metrics.densityDpi);
+        //Log.d("------", " density: " + metrics.density);
 
         //проверяю если режим экрана больше дефолтного (1.0f)
         //корректирую размер ячейки в зависимости от текущего режима
@@ -192,46 +333,50 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
             //0.75
             if(metrics.density == MODE_LDPI)
             {
-                this.SCALE = (int) (this.DEFAULT_SCALE * MODE_LDPI);
-                Log.d("//////", "SCALE = " + this.SCALE);
+                SCALE = (int) (DEFAULT_SCALE * MODE_LDPI);
+                Log.d("//////", "SCALE = " + SCALE);
             }
             //1.5
             else if(metrics.density == MODE_HDPI)
             {
-                this.SCALE = (int) (this.DEFAULT_SCALE * MODE_HDPI);
-                Log.d("//////", "SCALE = " + this.SCALE);
+                SCALE = (int) (DEFAULT_SCALE * MODE_HDPI);
+                Log.d("//////", "SCALE = " + SCALE);
             }
             //2.0
             else if(metrics.density == MODE_XHDPI)
             {
-                this.SCALE = (int) (this.DEFAULT_SCALE * MODE_XHDPI);
-                Log.d("//////", "SCALE = " + this.SCALE);
+                SCALE = (int) (DEFAULT_SCALE * MODE_XHDPI);
+                Log.d("//////", "SCALE = " + SCALE);
             }
             //3.0
             else if(metrics.density == MODE_XHDPI_3)
             {
-                this.SCALE = (int) (this.DEFAULT_SCALE * MODE_XHDPI_3);
-                Log.d("//////", "SCALE = " + this.SCALE);
+                SCALE = (int) (DEFAULT_SCALE * MODE_XHDPI_3);
+                Log.d("//////", "SCALE = " + SCALE);
             }
         }
-        Log.d("Current Scale", "SCALE (AFTER) = " + this.SCALE);
+        //Log.d("Current Scale", "SCALE (AFTER) = " + SCALE);
 
-        this.brickWidth     = (this.SCALE + (this.brickPadding * 2));
-        this.brickHeight    = this.brickWidth / 2;
-        this.brick          = Bitmap.createScaledBitmap(this.brick,(int)this.brickWidth,(int)this.brickHeight,true);
+        brickWidth     = (SCALE + (brickPadding * 2));
+        brickHeight    = brickWidth / 2;
+        this.brick     = Bitmap.createScaledBitmap(this.brick,(int)brickWidth,(int)brickHeight,true);
 
-        Log.d("BrickWidth",  "brWidth = " + this.brickWidth);
-        Log.d("BrickHeight", "brHeight = " + this.brickHeight);
+        //Log.d("BrickWidth",  "brWidth = " + brickWidth);
+        //Log.d("BrickHeight", "brHeight = " + brickHeight);
 
-        this.racket    = new Racket(this.screenX, this.screenY, this.speed);
-        this.ball      = new Ball(  this.racket.getRacketX(), this.racket.getRacketY(),
-                                    this.racket.getRacketLength() , this.SCALE , 200 , 200);
-        /*this.ball.defaultBall(  this.racket.getRacketX(),
-                                this.racket.getRacketY(),
-                                this.racket.getRacketLength());*/
+        if(NewGameRun)
+        {
+            racket    = new Racket(screenX, screenY, speed);
+            ball      = new Ball(   racket.getRacketX(),
+                    racket.getRacketY(),
+                    racket.getRacketLength() , SCALE , 200 , 200);
+            timeStart = Calendar.getInstance().getTimeInMillis();
+            MapCreate();
+        }
 
-        MapCreate();
         this.MSVM.start();
+
+        timeStart = Calendar.getInstance().getTimeInMillis();
     }
 
     @Override
@@ -240,27 +385,29 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         Log.d("-----", "width = " + width + " height = " + height);
 
         //Делаю оптимальный расчет ширины и высоты SurfaceView, подогнаный под размер SCALE
-        this.screenX = this.getWidth();
-        this.screenY = this.getHeight();
-        Log.d("Surf_Changed>>>>>", " xPixels: "  + this.screenX);
-        Log.d("Surf_Changed>>>>>", " yPixels: "   + this.screenY);
+        screenX = this.getWidth();
+        screenY = this.getHeight();
 
-        Log.d("Surf_Changed , Height = ",String.valueOf(height / this.SCALE));
-        Log.d("Surf_Changed , Width  = ",String.valueOf(width / this.SCALE));
+        Log.d("Surf_Changed>>>>>", " xPixels: "  + screenX);
+        Log.d("Surf_Changed>>>>>", " yPixels: "  + screenY);
 
+        Log.d("Surf_Changed , Height = ", String.valueOf(height / SCALE));
+        Log.d("Surf_Changed , Width  = ", String.valueOf(width / SCALE));
 
         if(this.livesTV == null)
         {
             this.livesTV = (TextView)this.activity.findViewById(R.id.tvLives);
         }
-        //Записываю текущее значение счетчика (по умолчанию = 3) при первом создании SurfaceView
-        this.livesTV.setText("Lives: " + this.lives);
+        this.livesTV.setText(String.valueOf(this.lives));
 
+        if(this.timeTV == null)
+        {
+            this.timeTV = (TextView)this.activity.findViewById(R.id.tvTime);
+        }
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
-    {
+    public void surfaceDestroyed(SurfaceHolder holder)    {
         try
         {
             this.MSVM.stopRun();
@@ -270,8 +417,7 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event)
-    {
+    public boolean onTouch(View v, MotionEvent event)    {
         switch (event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
@@ -292,22 +438,25 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         return true;
     }
 
-    public void MapCreate()
-    {
-        for (int i = 0; i < this.bricks.length ; i++)
-        {
-            for (int j = 0; j < this.bricks[i].length; j++)
-            {
-                bricks[i][j] = new Brick(i, j, this.brickWidth, this.brickHeight, this.brickPadding);
-                bricks[i][j].setVisible(true);
-                //bricksCnt++;
-            }
-        }
+    public static void setNewGameRun(boolean NewGame) {
+        NewGameRun = NewGame;
     }
 
+    public void MapCreate()    {
+        this.bricksCnt = 0;
+        for (int i = 0; i < bricks.length ; i++)
+        {
+            for (int j = 0; j < bricks[i].length; j++)
+            {
+                bricks[i][j] = new Brick(i, j, brickWidth, brickHeight, brickPadding);
+                bricks[i][j].setVisible(true);
+                this.bricksCnt++;
+            }
+        }
+        //Log.d("<<<>>>>", " bricksCnt: "  + bricksCnt);
+    }
 
-    public void actionBall()			// checking ball position && collisions with bricks,walls and bottom
-    {
+    public void actionBall()    {
         if (!this.isWin && this.lives > -1)
         {
             //left Wall
@@ -336,14 +485,13 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
             }
 
             //Ball goes to Bottom
-            if ((ball.getRectBall().bottom) >= this.screenY)
+            if ((ball.getRectBall().bottom) >= screenY)
             {
                 this.lives --;
 
-
-                ball.defaultBall(this.racket.getRacketX(),
-                        this.racket.getRacketY(),
-                        this.racket.getRacketLength());
+                ball.defaultBall(   racket.getRacketX(),
+                        racket.getRacketY(),
+                        racket.getRacketLength());
 
             }
 
@@ -351,12 +499,13 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
             {
                 for (int i = 0; i < bricks.length; i++)
                 {
-                    for (int j = 0;  j< bricks[i].length; j++)
+                    for (int j = 0;  j < bricks[i].length; j++)
                     {
                         if( bricks[i][j].Visible())
                         {
-                            if (RectF.intersects(bricks[i][j].getRectBrick(), ball.getRectBall()))
+                            if (RectF.intersects( bricks[i][j].getRectBrick(), ball.getRectBall() ))
                             {
+                                //bricksCnt--;
                                 if(ball.getBallY() <= (bricks[i][j].getBrickY() + bricks[i][j].getBrickHeight()))
                                 {
                                     bricks[i][j].setVisible(false);
@@ -415,9 +564,10 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         }
     }
 
-    /*
-    public void isWin(Brick [][] bricks , int bricksCounter)
+    public void chkWin()
     {
+        int bricksCounter = this.bricksCnt;
+
         for (int i = 0; i < this.bricks.length ; i++)
         {
             for (int j = 0; j < this.bricks[i].length; j++)
@@ -428,13 +578,7 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
                 }
             }
         }
-        isWin = bricksCounter <= 0;
-    }
-    */
-
-    public int getLives() {
-        return lives;
+        this.isWin = bricksCounter < 1;
+        //Log.d("chkWin","brickCnt = " + bricksCounter);
     }
 }
-// This is the end of our ArcView  class
-// -----------------------------------------------------------

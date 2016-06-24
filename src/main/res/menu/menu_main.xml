@@ -1,0 +1,33 @@
+<menu
+
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+
+    <item
+        android:title="@string/menu"
+        android:orderInCategory="100"
+        app:showAsAction="always" />
+
+    <item android:id="@+id/newGame"
+        android:title="@string/newG"
+        android:orderInCategory="200"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/pause"
+        android:title="@string/pause"
+        android:orderInCategory="300"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/resume"
+        android:title="@string/resume"
+        android:orderInCategory="400"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/quit"
+        android:title="@string/exit"
+        android:orderInCategory="500"
+        app:showAsAction="never" />
+
+</menu>

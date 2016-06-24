@@ -24,9 +24,9 @@ public class Brick
     public Brick(int row, int column , double brickWidth, double brickHeight, double brickPadding)                                // ! ! ! ! !
     {
         this.rectBrick  = new RectF((float)(brickWidth + brickPadding )    * column ,
-                                    (float)(brickHeight + brickPadding )   * row,
-                                    (float)((brickWidth + brickPadding )   * column    + brickWidth),
-                                    (float)((brickHeight + brickPadding )  * row       + brickHeight));
+                (float)(brickHeight + brickPadding )   * row,
+                (float)((brickWidth + brickPadding )   * column    + brickWidth),
+                (float)((brickHeight + brickPadding )  * row       + brickHeight));
         this.brickX         = (float)(brickWidth + brickPadding )    * column;
         this.brickY         = (float)(brickHeight + brickPadding )   * row;
         this.brickWidth     = brickWidth;

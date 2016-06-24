@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Arcanoid</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="newG">New Game</string>
+    <string name="menu">Game Menu</string>
+    <string name="exit">Quit</string>
+</resources>

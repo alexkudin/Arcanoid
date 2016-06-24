@@ -43,16 +43,16 @@ public class Ball
         this.ballYspeed = Yspeed;
         this.ballWidth = this.ballHeight = scale / 2;
         this.ballX = (racketX + racketLength / 2) - (this.ballWidth);           // X top left corner of Ball
-        this.ballY =  racketY - this.ballHeight * 1.5 ;                         // Y top left corner of Ball
+        this.ballY =  racketY - this.ballHeight ;                         // Y top left corner of Ball
         //this.ballX = (screenX / 2) - (this.ballWidth / 2);         // X top left corner of Ball
         //this.ballY =  screenY - 65;                                // Y top left corner of Ball
         this.rectBall = new RectF(  (float)this.ballX,
-                                    (float)this.ballY,
-                                    (float)this.ballX  + this.ballWidth,
-                                    (float)this.ballY  + this.ballHeight);
-        Log.d("Width_Height_Ball", this.ballWidth + "----" + this.ballHeight);
-        Log.d("Ball_Speed", this.ballXspeed + "<<>>" + this.ballYspeed);
-        Log.d("Ball_X_Y", this.ballX + "<<--->>" + this.ballY);
+                (float)this.ballY,
+                (float)this.ballX  + this.ballWidth,
+                (float)this.ballY  + this.ballHeight);
+        //Log.d("Width_Height_Ball", this.ballWidth + "----" + this.ballHeight);
+        //Log.d("Ball_Speed", this.ballXspeed + "<<>>" + this.ballYspeed);
+        //Log.d("Ball_X_Y", this.ballX + "<<--->>" + this.ballY);
 
     }
 
@@ -86,32 +86,25 @@ public class Ball
     public void defaultBall(double racketX, double racketY, int racketLength)
     {
         this.ballX = (racketX + racketLength / 2) - (this.ballWidth);           // X top left corner of Ball
-        this.ballY =  racketY - this.ballHeight * 1.5;                          // Y top left corner of Ball
+        this.ballY =  racketY - this.ballHeight;                                // Y top left corner of Ball
         this.ballXspeed = 200;
         this.ballYspeed = 200;
         this.Up    = true;
-
-
-        Log.d("Ball_Default", this.ballX + "--->>" + this.ballY + "speed : " + this.ballXspeed);
-
+        //Log.d("Ball_Default", this.ballX + "--->>" + this.ballY + "speed : " + this.ballXspeed);
     }
 
     public void changeBallXdirection(){
         this.Right = !this.Right;
     }
-
     public void changeBallYdirection(){
         this.Up   = !this.Up;
     }
-
     public void changeBallXspeed(){
         this.ballXspeed = this.ballXspeed * -1;
     }
-
     public void changeBallYspeed(){
         this.ballYspeed = this.ballYspeed * -1;
     }
-
     public boolean getUpDirection() {
         return this.Up;
     }
