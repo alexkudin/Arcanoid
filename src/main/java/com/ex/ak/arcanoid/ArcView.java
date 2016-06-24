@@ -107,8 +107,8 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
                                     lives = 3;
                                     racket    = new Racket(screenX, screenY, speed);
                                     ball.defaultBall(   racket.getRacketX(),
-                                            racket.getRacketY(),
-                                            racket.getRacketLength());
+                                                        racket.getRacketY(),
+                                                        racket.getRacketLength());
                                     MSVM.isRun = true;
                                     NewGameRun = true;
                                     delta = 0;
@@ -265,7 +265,6 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
     public static double     speed   = 15;                 // Условная скорость(от нее пересчитываются все остальные скорости)
     public int               lives   = 3;                  // Количество жизней изначально
     //public String       myTime = java.text.DateFormat.getDateTimeInstance().format(Calendar.getInstance().get(Calendar.SECOND));
-
     public static long        timeStart;
     public static long        timeCurrent;
     public static long        timeOfGame;
@@ -368,8 +367,8 @@ public class ArcView extends SurfaceView implements SurfaceHolder.Callback, View
         {
             racket    = new Racket(screenX, screenY, speed);
             ball      = new Ball(   racket.getRacketX(),
-                    racket.getRacketY(),
-                    racket.getRacketLength() , SCALE , 200 , 200);
+                                    racket.getRacketY(),
+                                    racket.getRacketLength() , SCALE , 200 , 200);
             timeStart = Calendar.getInstance().getTimeInMillis();
             MapCreate();
         }
